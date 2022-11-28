@@ -10,7 +10,7 @@ fn get_local_package() -> Result<Vec<String>> {
     }
 
     let stdout_manual = std::str::from_utf8(&cmd.stdout)?
-        .split("\n")
+        .split('\n')
         .map(|x| x.to_string())
         .filter(|x| !x.is_empty())
         .collect::<Vec<_>>();
@@ -22,7 +22,7 @@ fn get_local_package() -> Result<Vec<String>> {
     }
 
     let stdout_auto = std::str::from_utf8(&cmd.stdout)?
-        .split("\n")
+        .split('\n')
         .map(|x| x.to_string())
         .filter(|x| !x.is_empty())
         .collect::<Vec<_>>();
@@ -44,7 +44,7 @@ fn get_apt_installed_from_mirror() -> Result<HashMap<String, u8>> {
         f.read_to_string(&mut s)?;
     
         let packages = s
-            .split("\n")
+            .split('\n')
             .filter(|x| x.starts_with("Package: "))
             .map(|x| x.replace("Package: ", ""))
             .collect::<Vec<_>>();
