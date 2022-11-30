@@ -2,7 +2,7 @@ use std::{collections::HashMap, io::Read, process::Command, fs};
 
 use anyhow::{anyhow, Result};
 
-fn get_local_package() -> Result<Vec<String>> {
+fn get_local_packages() -> Result<Vec<String>> {
     let cmd = Command::new("apt-mark").arg("showmanual").output()?;
 
     if !cmd.status.success() {
@@ -60,10 +60,10 @@ fn get_apt_installed_from_mirror() -> Result<HashMap<String, u8>> {
 
 pub fn hunter() -> Result<Vec<String>> {
     let mut result = vec![];
-    let local_package = get_local_package()?;
+    let local_packages = get_local_packages()?;
     let installed_from_mirror = get_apt_installed_from_mirror()?;
 
-    for i in local_package {
+    for i in local_packages {
         if installed_from_mirror.get(&i).is_none() {
             result.push(i);
         }

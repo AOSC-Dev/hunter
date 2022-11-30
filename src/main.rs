@@ -1,16 +1,13 @@
 use file_handler::hunter;
 
-use crate::package_info::dpkg_info;
+use crate::package_info::to_tabled;
 
 mod file_handler;
 mod package_info;
 
 fn main() {
-    let list = hunter();
-
-    if let Ok(list) = list {
-        for i in list {
-            println!("{:?}", dpkg_info(&i));
-        }
-    }
+    let list = hunter().unwrap();
+    let table = to_tabled(&list).unwrap();
+    
+    println!("{}", table);
 }
