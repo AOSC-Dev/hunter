@@ -7,7 +7,9 @@ mod package_info;
 
 fn main() {
     let list = hunter().unwrap();
-    let table = to_tabled(&list).unwrap();
+    if !list.is_empty() {
+        let table = to_tabled(&list).unwrap();
     
-    println!("{}", table);
+        println!("{}", table);
+    }
 }

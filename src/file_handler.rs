@@ -46,8 +46,7 @@ fn get_apt_installed_from_mirror() -> Result<HashMap<String, u8>> {
         let packages = s
             .split('\n')
             .filter(|x| x.starts_with("Package: "))
-            .map(|x| x.replace("Package: ", ""))
-            .collect::<Vec<_>>();
+            .map(|x| x.replace("Package: ", ""));
 
         for i in packages {
             result.insert(i, 0);
