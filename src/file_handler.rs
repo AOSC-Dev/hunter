@@ -30,7 +30,7 @@ fn get_local_packages() -> Result<Vec<String>> {
     Ok([stdout_manual, stdout_auto].concat())
 }
 
-fn get_apt_installed_from_mirror() -> Result<HashMap<String, u8>> {
+fn get_apt_mirror_packages() -> Result<HashMap<String, u8>> {
     let dir = fs::read_dir("/var/lib/apt/lists")?;
     let mut result = HashMap::new();
 
@@ -60,7 +60,7 @@ fn get_apt_installed_from_mirror() -> Result<HashMap<String, u8>> {
 pub fn hunter() -> Result<Vec<String>> {
     let mut result = vec![];
     let local_packages = get_local_packages()?;
-    let installed_from_mirror = get_apt_installed_from_mirror()?;
+    let installed_from_mirror = get_apt_mirror_packages()?;
 
     for i in local_packages {
         if installed_from_mirror.get(&i).is_none() {

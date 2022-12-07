@@ -1,8 +1,9 @@
 use anyhow::{anyhow, Result};
 use std::process::Command;
-use tabled::{Alignment, Modify, Style, Table, Tabled};
 use tabled::object::Segment;
+use tabled::{Alignment, Modify, Style, Table, Tabled};
 
+use crate::parser::single_package;
 
 #[derive(Debug, Tabled)]
 pub struct Package {
@@ -14,31 +15,30 @@ pub struct Package {
     pub description: String,
 }
 
-fn parse_dpkg_info(s: &str) -> Package {
-    let package_vec = s.split('\n').map(|x| x.to_string()).collect::<Vec<_>>();
+fn parse_dpkg_info(buf: &[u8]) -> Result<Package> {
+    let pk_infos = single_package(buf).map_err(|e| anyhow!("{}", e))?.1;
 
-    let package = get_value(&package_vec, "Package");
+    let pk = get_value(&pk_infos, "Package")?;
+    let ver = get_value(&pk_infos, "Version")?;
+    let desc = get_value(&pk_infos, "Description")?;
 
-    let version = get_value(&package_vec, "Version");
-    let desc = get_value(&package_vec, "Description");
-
-    Package {
-        package: package.to_string(),
-        version: version.to_string(),
-        description: desc.to_string(),
-    }
+    Ok(Package {
+        package: pk,
+        version: ver,
+        description: desc,
+    })
 }
 
-fn get_value<'a>(package_vec: &'a [String], value: &'a str) -> &'a str {
-    let index = package_vec
+fn get_value<'a>(pk_infos: &[(&[u8], &[u8])], value: &str) -> Result<String> {
+    let v = pk_infos
         .iter()
-        .position(|x| x.contains(&format!("{}: ", value)))
-        .unwrap();
-    let result = package_vec[index]
-        .strip_prefix(&format!("{}: ", value))
-        .unwrap();
+        .find(|(x, _)| x == &value.as_bytes())
+        .map(|(_, y)| y)
+        .ok_or_else(|| anyhow!("Can not get {:?} value {}", pk_infos, value))?;
 
-    result
+    let v = std::str::from_utf8(v)?.to_string();
+
+    Ok(v)
 }
 
 pub fn to_tabled(list: &[String]) -> Result<Table> {
@@ -68,7 +68,7 @@ fn dpkg_info(pkgname: &str) -> Result<Package> {
         ));
     }
 
-    let package = parse_dpkg_info(std::str::from_utf8(&cmd.stdout)?);
+    let package = parse_dpkg_info(&cmd.stdout)?;
 
     Ok(package)
 }
