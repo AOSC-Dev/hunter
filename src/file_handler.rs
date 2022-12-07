@@ -1,6 +1,8 @@
-use std::{collections::HashMap, io::Read, process::Command, fs};
+use std::{collections::HashMap, fs, io::Read, process::Command};
 
 use anyhow::{anyhow, Result};
+
+use crate::parser::extract_all_names;
 
 fn get_local_packages() -> Result<Vec<String>> {
     let cmd = Command::new("apt-mark").arg("showmanual").output()?;
@@ -12,8 +14,7 @@ fn get_local_packages() -> Result<Vec<String>> {
     let stdout_manual = std::str::from_utf8(&cmd.stdout)?
         .split('\n')
         .map(|x| x.to_string())
-        .filter(|x| !x.is_empty())
-        .collect::<Vec<_>>();
+        .filter(|x| !x.is_empty());
 
     let cmd = Command::new("apt-mark").arg("showauto").output()?;
 
@@ -24,10 +25,9 @@ fn get_local_packages() -> Result<Vec<String>> {
     let stdout_auto = std::str::from_utf8(&cmd.stdout)?
         .split('\n')
         .map(|x| x.to_string())
-        .filter(|x| !x.is_empty())
-        .collect::<Vec<_>>();
+        .filter(|x| !x.is_empty());
 
-    Ok([stdout_manual, stdout_auto].concat())
+    Ok(stdout_manual.chain(stdout_auto).collect())
 }
 
 fn get_apt_mirror_packages() -> Result<HashMap<String, u8>> {
@@ -35,24 +35,25 @@ fn get_apt_mirror_packages() -> Result<HashMap<String, u8>> {
     let mut result = HashMap::new();
 
     for i in dir.flatten() {
-        if !i.file_name().to_str().ok_or_else(|| anyhow!("Can not get filename str!"))?.ends_with("_Packages") {
+        if !i
+            .file_name()
+            .to_str()
+            .ok_or_else(|| anyhow!("Can not get filename str!"))?
+            .ends_with("_Packages")
+        {
             continue;
         }
 
         let mut f = std::fs::File::open(i.path())?;
-        let mut s = String::new();
-        f.read_to_string(&mut s)?;
-    
-        let packages = s
-            .split('\n')
-            .filter(|x| x.starts_with("Package: "))
-            .map(|x| x.replace("Package: ", ""));
+        let mut buf = Vec::new();
+        f.read_to_end(&mut buf)?;
+
+        let packages = extract_all_names(&buf).map_err(|e| anyhow!("{}", e))?.1;
 
         for i in packages {
-            result.insert(i, 0);
+            result.insert(std::str::from_utf8(i)?.to_string(), 0);
         }
     }
-    
 
     Ok(result)
 }

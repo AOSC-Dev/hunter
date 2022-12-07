@@ -1,9 +1,10 @@
 use nom::{
-    bytes::complete::{take_until, tag},
-    character::complete::{space0, char},
+    bytes::complete::{tag, take_until},
+    character::complete::{char, space0},
     combinator::{map, verify},
-    sequence::{separated_pair, tuple, terminated},
-    IResult, multi::many1,
+    multi::many1,
+    sequence::{separated_pair, terminated, tuple},
+    IResult,
 };
 
 #[inline]
@@ -37,6 +38,20 @@ pub fn single_package(input: &[u8]) -> IResult<&[u8], Vec<(&[u8], &[u8])>> {
     many1(terminated(key_value, tag("\n")))(input)
 }
 
+#[inline]
+fn extract_name(input: &[u8]) -> IResult<&[u8], &[u8]> {
+    let info = single_package(input)?;
+
+    let name = info.1.iter().find(|(x, _)| x == b"Package").map(|(_, y)| y);
+
+    Ok((info.0, name.unwrap()))
+}
+
+#[inline]
+pub fn extract_all_names(input: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    many1(terminated(extract_name, tag("\n")))(input)
+}
+
 #[test]
 fn test_package() {
     let test = &b"Package: zsync\nVersion: 0.6.2-1\nStatus: install ok installed\nArchitecture: amd64\nInstalled-Size: 256\n\n"[..];
@@ -52,5 +67,18 @@ fn test_package() {
                 (&b"Installed-Size"[..], &b"256"[..])
             ]
         ))
+    );
+}
+
+#[test]
+fn test_multi_package() {
+    let test =
+        &b"Package: zsync\nStatus: b\n\nPackage: rsync\nStatus: install ok installed\n\n"[..];
+
+    dbg!(extract_all_names(test).unwrap().1);
+
+    assert_eq!(
+        extract_all_names(test),
+        Ok((&b""[..], vec![&b"zsync"[..], &b"rsync"[..]]))
     );
 }
