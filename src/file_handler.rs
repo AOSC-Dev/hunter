@@ -5,29 +5,25 @@ use anyhow::{anyhow, Result};
 use crate::parser::extract_all_names;
 
 fn get_local_packages() -> Result<Vec<String>> {
-    let cmd = Command::new("apt-mark").arg("showmanual").output()?;
+    let cmd = Command::new("dpkg-query")
+        .arg("-W")
+        .arg("-f=${Package}\n")
+        .output()?;
 
     if !cmd.status.success() {
-        return Err(anyhow!("Can not run apt-mark showmanual!"));
+        return Err(anyhow!(
+            "Run dpkg-query failed!\n\nError:\n\n{}",
+            String::from_utf8_lossy(&cmd.stderr)
+        ));
     }
 
-    let stdout_manual = std::str::from_utf8(&cmd.stdout)?
+    let results = std::str::from_utf8(&cmd.stdout)?
         .split('\n')
+        .filter(|x| !x.is_empty())
         .map(|x| x.to_string())
-        .filter(|x| !x.is_empty());
+        .collect();
 
-    let cmd = Command::new("apt-mark").arg("showauto").output()?;
-
-    if !cmd.status.success() {
-        return Err(anyhow!("Can not run apt-mark showauto!"));
-    }
-
-    let stdout_auto = std::str::from_utf8(&cmd.stdout)?
-        .split('\n')
-        .map(|x| x.to_string())
-        .filter(|x| !x.is_empty());
-
-    Ok(stdout_manual.chain(stdout_auto).collect())
+    Ok(results)
 }
 
 fn get_apt_mirror_packages() -> Result<HashMap<String, u8>> {
