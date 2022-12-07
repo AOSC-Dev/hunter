@@ -29,7 +29,7 @@ fn parse_dpkg_info(buf: &[u8]) -> Result<Package> {
     })
 }
 
-fn get_value<'a>(pk_infos: &[(&[u8], &[u8])], value: &str) -> Result<String> {
+fn get_value(pk_infos: &[(&[u8], &[u8])], value: &str) -> Result<String> {
     let v = pk_infos
         .iter()
         .find(|(x, _)| x == &value.as_bytes())

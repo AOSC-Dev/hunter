@@ -7,6 +7,8 @@ use nom::{
     IResult,
 };
 
+type SinglePackageResult<'a> = IResult<&'a [u8], Vec<(&'a [u8], &'a [u8])>>;
+
 #[inline]
 fn single_line(input: &[u8]) -> IResult<&[u8], &[u8]> {
     take_until("\n")(input)
@@ -34,7 +36,7 @@ fn key_value(input: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
 }
 
 #[inline]
-pub fn single_package(input: &[u8]) -> IResult<&[u8], Vec<(&[u8], &[u8])>> {
+pub fn single_package(input: &[u8]) -> SinglePackageResult {
     many1(terminated(key_value, tag("\n")))(input)
 }
 
