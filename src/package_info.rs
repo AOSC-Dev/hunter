@@ -1,9 +1,6 @@
-use anyhow::{anyhow, Result};
-use std::process::Command;
+use anyhow::Result;
 use tabled::object::Segment;
 use tabled::{Alignment, Modify, Style, Table, Tabled};
-
-use crate::parser::single_package;
 
 #[derive(Debug, Tabled)]
 pub struct Package {
@@ -15,39 +12,41 @@ pub struct Package {
     pub description: String,
 }
 
-fn parse_dpkg_info(buf: &[u8]) -> Result<Package> {
-    let pk_infos = single_package(buf).map_err(|e| anyhow!("{}", e))?.1;
+// pub fn pretty_packages(packages: Vec<Vec<(&[u8], &[u8])>>) -> Result<Vec<Package>> {
+//     let mut results = vec![];
 
-    let pk = get_value(&pk_infos, "Package")?;
-    let ver = get_value(&pk_infos, "Version")?;
-    let desc = get_value(&pk_infos, "Description")?;
+//     for p in packages {
+//         let (mut package, mut version, mut desc) = (None, None, None);
+//         for i in p {
+//             if i.0 == b"Package" {
+//                 package = Some(i.1);
+//             }
 
-    Ok(Package {
-        package: pk,
-        version: ver,
-        description: desc,
-    })
-}
+//             if i.0 == b"Version" {
+//                 version = Some(i.1);
+//             }
+    
+//             if i.0 == b"Description" {
+//                 desc = Some(i.1);
+//             }
+//         }
 
-fn get_value(pk_infos: &[(&[u8], &[u8])], value: &str) -> Result<String> {
-    let v = pk_infos
-        .iter()
-        .find(|(x, _)| x == &value.as_bytes())
-        .map(|(_, y)| y)
-        .ok_or_else(|| anyhow!("Can not get {:?} value {}", pk_infos, value))?;
+//         // if package.and(version).and(desc).is_none() {
+//         //     return Err(anyhow!("Can not parse package: {}", pkgname));
+//         // }
 
-    let v = std::str::from_utf8(v)?.to_string();
+//         results.push(Package {
+//             package: std::str::from_utf8(package.unwrap())?.to_string(),
+//             version: std::str::from_utf8(version.unwrap())?.to_string(),
+//             description: std::str::from_utf8(desc.unwrap())?.to_string(),
+//         });
+//     }
 
-    Ok(v)
-}
+//     Ok(results)
+// }
 
-pub fn to_tabled(list: &[String]) -> Result<Table> {
-    let mut table = vec![];
-    for i in list {
-        table.push(dpkg_info(i)?);
-    }
-
-    let mut table = Table::new(table);
+pub fn to_tabled(list: Vec<Package>) -> Result<Table> {
+    let mut table = Table::new(list);
 
     table
         .with(Modify::new(Segment::all()).with(Alignment::left()))
@@ -57,18 +56,50 @@ pub fn to_tabled(list: &[String]) -> Result<Table> {
     Ok(table)
 }
 
-fn dpkg_info(pkgname: &str) -> Result<Package> {
-    let cmd = Command::new("dpkg").arg("-s").arg(pkgname).output()?;
+// fn dpkg_info(pkgname: &str, packages: Vec<Vec<(&[u8], &[u8])>>) -> Result<Package> {
+//     let mut info = None;
 
-    if !cmd.status.success() {
-        return Err(anyhow!(
-            "Can not run dpkg -s {}\n\n Error:\n\n {}",
-            pkgname,
-            std::str::from_utf8(&cmd.stderr)?
-        ));
-    }
+//     for i in packages {
+//         if i.iter().find(|(x, _)| x == b"Package").map(|x| x.1) == Some(pkgname.as_bytes()) {
+//             info = Some(i);
+//             break;
+//         }
+//     }
 
-    let package = parse_dpkg_info(&cmd.stdout)?;
+//     if info.is_none() {
+//         return Err(anyhow!(
+//             "Could not get package {} in /var/lib/dpkg/status",
+//             pkgname
+//         ));
+//     }
 
-    Ok(package)
-}
+//     let info = info.unwrap();
+
+//     let (mut package, mut version, mut desc) = (None, None, None);
+
+//     for i in info {
+//         if i.0 == b"Package" {
+//             package = Some(i.1);
+//         }
+
+//         if i.0 == b"Version" {
+//             version = Some(i.1);
+//         }
+
+//         if i.0 == b"Description" {
+//             desc = Some(i.1);
+//         }
+//     }
+
+//     if package.and(version).and(desc).is_none() {
+//         return Err(anyhow!("Can not parse package: {}", pkgname));
+//     }
+
+//     let package = Package {
+//         package: std::str::from_utf8(package.unwrap())?.to_string(),
+//         version: std::str::from_utf8(version.unwrap())?.to_string(),
+//         description: std::str::from_utf8(desc.unwrap())?.to_string(),
+//     };
+
+//     Ok(package)
+// }

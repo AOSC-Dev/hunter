@@ -9,7 +9,7 @@ mod parser;
 fn main() {
     let list = hunter().unwrap();
     if !list.is_empty() {
-        let table = to_tabled(&list).unwrap();
+        let table = to_tabled(list).unwrap();
     
         println!("{}", table);
     }

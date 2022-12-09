@@ -1,27 +1,32 @@
-use std::{collections::HashMap, fs, io::Read, process::Command};
+use std::{collections::HashMap, fs, io::Read};
 
 use anyhow::{anyhow, Result};
 
-use crate::parser::extract_all_names;
+use crate::{
+    package_info::Package,
+    parser::{all_packages, extract_all_names},
+};
 
-fn get_local_packages() -> Result<Vec<String>> {
-    let cmd = Command::new("dpkg-query")
-        .arg("-W")
-        .arg("-f=${Package}\n")
-        .output()?;
+fn get_local_packages() -> Result<Vec<Package>> {
+    let mut dpkg_status = std::fs::File::open("/var/lib/dpkg/status")?;
+    let mut buf = Vec::new();
+    dpkg_status.read_to_end(&mut buf)?;
 
-    if !cmd.status.success() {
-        return Err(anyhow!(
-            "Run dpkg-query failed!\n\nError:\n\n{}",
-            String::from_utf8_lossy(&cmd.stderr)
-        ));
+    let packages = all_packages(&buf).map_err(|e| anyhow!("{}", e))?.1;
+
+    let packages = packages
+        .iter()
+        .filter(|x| x.status == b"install ok installed");
+
+    let mut results = vec![];
+
+    for i in packages {
+        results.push(Package {
+            package: std::str::from_utf8(i.package)?.to_string(),
+            version: std::str::from_utf8(i.version)?.to_string(),
+            description: std::str::from_utf8(i.desc)?.to_string(),
+        })
     }
-
-    let results = std::str::from_utf8(&cmd.stdout)?
-        .split('\n')
-        .filter(|x| !x.is_empty())
-        .map(|x| x.to_string())
-        .collect();
 
     Ok(results)
 }
@@ -54,13 +59,13 @@ fn get_apt_mirror_packages() -> Result<HashMap<String, u8>> {
     Ok(result)
 }
 
-pub fn hunter() -> Result<Vec<String>> {
+pub fn hunter() -> Result<Vec<Package>> {
     let mut result = vec![];
     let local_packages = get_local_packages()?;
     let installed_from_mirror = get_apt_mirror_packages()?;
 
     for i in local_packages {
-        if installed_from_mirror.get(&i).is_none() {
+        if installed_from_mirror.get(&i.package).is_none() {
             result.push(i);
         }
     }

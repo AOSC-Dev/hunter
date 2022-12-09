@@ -1,9 +1,11 @@
 use nom::{
-    bytes::complete::{tag, take_until},
+    bytes::{
+        complete::{tag, take_until, take_while},
+    },
     character::complete::{char, space0},
     combinator::{map, verify},
-    multi::many1,
-    sequence::{separated_pair, terminated, tuple},
+    multi::{many0, many1},
+    sequence::{preceded, separated_pair, terminated, tuple},
     IResult,
 };
 
@@ -12,6 +14,18 @@ type SinglePackageResult<'a> = IResult<&'a [u8], Vec<(&'a [u8], &'a [u8])>>;
 #[inline]
 fn single_line(input: &[u8]) -> IResult<&[u8], &[u8]> {
     take_until("\n")(input)
+}
+
+
+// drop deb811 multi line info (e.g: Conffiles)
+fn drop_multi_line(input: &[u8]) -> IResult<&[u8], ()> {
+    map(
+        many1(terminated(
+            tag(" "),
+            tuple((take_until("\n"), take_while(|c| c == b'\n'))),
+        )),
+        |_| {},
+    )(input)
 }
 
 #[inline]
@@ -26,6 +40,11 @@ fn key_name(input: &[u8]) -> IResult<&[u8], &[u8]> {
 }
 
 #[inline]
+fn hr(input: &[u8]) -> IResult<&[u8], ()> {
+    map(many0(drop_multi_line), |_| ())(input)
+}
+
+#[inline]
 fn separator(input: &[u8]) -> IResult<&[u8], ()> {
     map(tuple((char(':'), space0)), |_| ())(input)
 }
@@ -36,17 +55,50 @@ fn key_value(input: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
 }
 
 #[inline]
-pub fn single_package(input: &[u8]) -> SinglePackageResult {
-    many1(terminated(key_value, tag("\n")))(input)
+fn single_package(input: &[u8]) -> SinglePackageResult {
+    many1(preceded(hr, terminated(key_value, tag("\n"))))(input)
 }
 
 #[inline]
+pub fn all_packages(input: &[u8]) -> IResult<&[u8], Vec<PackageCtx>> {
+    many1(terminated(extract_package, tag("\n")))(input)
+}
+
 fn extract_name(input: &[u8]) -> IResult<&[u8], &[u8]> {
     let info = single_package(input)?;
 
     let name = info.1.iter().find(|(x, _)| x == b"Package").map(|(_, y)| y);
 
     Ok((info.0, name.unwrap()))
+}
+
+pub struct PackageCtx<'a> {
+    pub package: &'a [u8],
+    pub status: &'a [u8],
+    pub version: &'a [u8],
+    pub desc: &'a [u8],
+}
+
+fn extract_package(input: &[u8]) -> IResult<&[u8], PackageCtx> {
+    let info = single_package(input)?;
+    let name = info.1.iter().find(|(x, _)| x == b"Package").map(|(_, y)| y);
+    let status = info.1.iter().find(|(x, _)| x == b"Status").map(|(_, y)| y);
+    let version = info.1.iter().find(|(x, _)| x == b"Version").map(|(_, y)| y);
+    let desc = info
+        .1
+        .iter()
+        .find(|(x, _)| x == b"Description")
+        .map(|(_, y)| y);
+
+    Ok((
+        info.0,
+        PackageCtx {
+            package: name.unwrap(),
+            status: status.unwrap(),
+            version: version.unwrap(),
+            desc: desc.unwrap(),
+        },
+    ))
 }
 
 #[inline]
