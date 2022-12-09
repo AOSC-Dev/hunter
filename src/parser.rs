@@ -1,7 +1,5 @@
 use nom::{
-    bytes::{
-        complete::{tag, take_until, take_while},
-    },
+    bytes::complete::{tag, take_until, take_while},
     character::complete::{char, space0},
     combinator::{map, verify},
     multi::{many0, many1},
@@ -15,7 +13,6 @@ type SinglePackageResult<'a> = IResult<&'a [u8], Vec<(&'a [u8], &'a [u8])>>;
 fn single_line(input: &[u8]) -> IResult<&[u8], &[u8]> {
     take_until("\n")(input)
 }
-
 
 // drop deb811 multi line info (e.g: Conffiles)
 fn drop_multi_line(input: &[u8]) -> IResult<&[u8], ()> {
@@ -81,6 +78,7 @@ pub struct PackageCtx<'a> {
 
 fn extract_package(input: &[u8]) -> IResult<&[u8], PackageCtx> {
     let info = single_package(input)?;
+
     let name = info.1.iter().find(|(x, _)| x == b"Package").map(|(_, y)| y);
     let status = info.1.iter().find(|(x, _)| x == b"Status").map(|(_, y)| y);
     let version = info.1.iter().find(|(x, _)| x == b"Version").map(|(_, y)| y);
