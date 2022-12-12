@@ -1,30 +1,46 @@
 use std::{collections::HashMap, fs, io::Read};
 
 use anyhow::{anyhow, Result};
+use eight_deep_parser::{Item, parse_multi};
 
-use crate::{
-    package_info::Package,
-    parser::{all_packages, extract_all_names},
-};
+use crate::package_info::Package;
 
 fn get_local_packages() -> Result<Vec<Package>> {
     let mut dpkg_status = std::fs::File::open("/var/lib/dpkg/status")?;
     let mut buf = Vec::new();
     dpkg_status.read_to_end(&mut buf)?;
 
-    let packages = all_packages(&buf).map_err(|e| anyhow!("{}", e))?.1;
+    let packages = eight_deep_parser::parse_multi(std::str::from_utf8(&buf)?)?;
 
     let packages = packages
         .iter()
-        .filter(|x| x.status == b"install ok installed");
+        .filter(|x| x.get("Status") == Some(&Item::OneLine("install ok installed".to_string())));
 
     let mut results = vec![];
 
     for i in packages {
+        let package = if let Item::OneLine(package) = i.get("Package").expect("Should have Package field") {
+            package
+        } else {
+            return Err(anyhow!(""))
+        };
+
+        let version = if let Item::OneLine(version) = i.get("Version").expect("Should have Version field") {
+            version
+        } else {
+            return Err(anyhow!(""))
+        };
+
+        let desc = if let Item::OneLine(desc) = i.get("Description").expect("Should have Desc field") {
+            desc
+        } else {
+            return Err(anyhow!(""))
+        };
+
         results.push(Package {
-            package: std::str::from_utf8(i.package)?.to_string(),
-            version: std::str::from_utf8(i.version)?.to_string(),
-            description: std::str::from_utf8(i.desc)?.to_string(),
+            package: package.to_owned(),
+            version: version.to_owned(),
+            description: desc.to_string(),
         })
     }
 
@@ -49,10 +65,18 @@ fn get_apt_mirror_packages() -> Result<HashMap<String, u8>> {
         let mut buf = Vec::new();
         f.read_to_end(&mut buf)?;
 
-        let packages = extract_all_names(&buf).map_err(|e| anyhow!("{}", e))?.1;
+        let s = std::str::from_utf8(&buf)?;
+        let packages = parse_multi(s)?;
+        let packages = packages.iter().map(|x| x.get("Package"));
 
-        for i in packages {
-            result.insert(std::str::from_utf8(i)?.to_string(), 0);
+        for i in packages.flatten() {
+            let package = if let Item::OneLine(package) = i {
+                package
+            } else {
+                return Err(anyhow!(""))
+            };
+
+            result.insert(package.to_owned(), 0);
         }
     }
 
