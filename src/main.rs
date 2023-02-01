@@ -32,7 +32,7 @@ fn main() {
         );
 
         if !res.is_empty() {
-            println!("The following packages installed on your system has been retired from our source\ntree and are no longer supported by AOSC OS maintainers. These packages will not\nreceive any updates, enhancements, or fixes.\n\nWe strongly recommend that you remove these packages to prevent stability issues\nor potential security vulnerabilities.");
+            println!("The following packages installed on your system has been retired from our source\ntree and are no longer supported by AOSC OS maintainers. These packages will not\nreceive any updates, enhancements, or fixes.\n\nWe strongly recommend that you remove these packages to prevent potential stability issues\nor security vulnerabilities.");
             let table1 = to_tabled(res).unwrap();
             println!("{}", table1);
         }
