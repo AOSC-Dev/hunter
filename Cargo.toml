@@ -8,7 +8,7 @@ version = "0.1.0"
 [dependencies]
 anyhow = "1.0"
 tabled = "0.10"
-eight-deep-parser = "0.3"
 reqwest = { version = "0.11", features = ["blocking"] }
 apt-sources-lists = { git = "https://github.com/pop-os/apt-sources-lists", rev = "0df4611ec7293010551f95659f28f1b1da9cc0c8" }
 xz2 = "0.1"
+debcontrol = "0.1"
