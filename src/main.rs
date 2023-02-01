@@ -38,8 +38,8 @@ fn main() {
         }
 
         println!(
-            r#"The following packages installed on your system may be installed from a third-party
-source. You may have installed them at some point manually.
+            r#"The following packages installed on your system may be installed from a topic repository or a third-party source.
+You may have installed them at some point manually.
         
 This is a friendly reminder, for your reference.
 "#
