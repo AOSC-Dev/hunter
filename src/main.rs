@@ -27,7 +27,7 @@ fn main() {
             }
         }
         println!(
-            "Hunter v{} Detects unsupported packages on your system\n",
+            "Hunter v{}: Detects unsupported packages on your system\n",
             env!("CARGO_PKG_VERSION")
         );
 
