@@ -33,7 +33,7 @@ fn main() {
 
         if !res.is_empty() {
             println!("The following packages installed on your system has been retired from our source\ntree and are no longer supported by AOSC OS maintainers. These packages will not\nreceive any updates, enhancements, or fixes.\n\nWe strongly recommend that you remove these packages to prevent potential stability issues\nor security vulnerabilities.");
-            let table1 = to_tabled(res).unwrap();
+            let table1 = to_tabled(&res).unwrap();
             println!("{}", table1);
         }
 
@@ -46,7 +46,19 @@ This is a friendly reminder, for your reference.
         );
 
         if !list.is_empty() {
-            let table2 = to_tabled(list).unwrap();
+            let list = if !res.is_empty() {
+                list.into_iter()
+                    .filter(|x| {
+                        !res.iter()
+                            .map(|y| y.package.clone())
+                            .collect::<Vec<_>>()
+                            .contains(&x.package)
+                    })
+                    .collect::<Vec<_>>()
+            } else {
+                list
+            };
+            let table2 = to_tabled(&list).unwrap();
             println!("{}", table2);
         }
     } else {

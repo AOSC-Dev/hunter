@@ -24,7 +24,7 @@ pub struct Csv {
     pub retire_date: String,
 }
 
-pub fn to_tabled(list: Vec<Package>) -> Result<Table> {
+pub fn to_tabled(list: &[Package]) -> Result<Table> {
     let mut table = Table::new(list);
 
     table
