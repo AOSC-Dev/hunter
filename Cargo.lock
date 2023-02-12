@@ -275,7 +275,7 @@ checksum = "c4a1e36c821dbe04574f602848a19f742f4fb3c98d40449f11bcad18d6b17421"
 
 [[package]]
 name = "hunter"
-version = "0.1.4"
+version = "0.1.5-alpha.0"
 dependencies = [
  "anyhow",
  "apt-sources-lists",
