@@ -46,11 +46,11 @@ This is a friendly reminder, for your reference.
         );
 
         if !list.is_empty() {
-            let list = if !res.is_empty() {
+            let list = if !csv.is_empty() {
                 list.into_iter()
                     .filter(|x| {
-                        !res.iter()
-                            .map(|y| y.package.clone())
+                        !csv.iter()
+                            .map(|y| y.name.clone())
                             .collect::<Vec<_>>()
                             .contains(&x.package)
                     })
