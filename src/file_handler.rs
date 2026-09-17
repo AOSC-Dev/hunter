@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs, io::Read};
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 
 use crate::package_info::Package;
 
