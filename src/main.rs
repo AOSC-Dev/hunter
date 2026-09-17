@@ -84,7 +84,7 @@ fn csv() -> Result<Vec<Csv>> {
         .iter()
         .filter(|x| x.suite == "stable")
         .collect::<Vec<_>>();
-    let source = source.first().take().context("mirror source is emoty!")?;
+    let source = source.first().context("mirror source is emoty!")?;
     let url = source.url();
     let url = format!("{url}/manifest/removed.csv.xz");
 
@@ -101,14 +101,14 @@ fn csv() -> Result<Vec<Csv>> {
 
     for i in buf.lines() {
         let mut i = i.split(',');
-        let name = i.nth(0).take().context("Csv file is broken!")?.to_string();
-        let hash = i.nth(0).take().context("Csv file is broken!")?.to_string();
-        let size = i.nth(0).take().context("Csv file is broken!")?.to_string();
-        let arch = i.nth(0).take().context("Csv file is broken!")?.to_string();
-        let filename = i.nth(0).take().context("Csv file is broken!")?.to_string();
-        let version = i.nth(0).take().context("Csv file is broken!")?.to_string();
-        let repo = i.nth(0).take().context("Csv file is broken!")?.to_string();
-        let retire_date = i.nth(0).take().context("Csv file is broken!")?.to_string();
+        let name = i.next().context("Csv file is broken!")?.to_string();
+        let hash = i.next().context("Csv file is broken!")?.to_string();
+        let size = i.next().context("Csv file is broken!")?.to_string();
+        let arch = i.next().context("Csv file is broken!")?.to_string();
+        let filename = i.next().context("Csv file is broken!")?.to_string();
+        let version = i.next().context("Csv file is broken!")?.to_string();
+        let repo = i.next().context("Csv file is broken!")?.to_string();
+        let retire_date = i.next().context("Csv file is broken!")?.to_string();
 
         res.push(Csv {
             name,

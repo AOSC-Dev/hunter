@@ -26,17 +26,14 @@ fn get_local_packages() -> Result<Vec<Package>> {
         let mut i_iter = i.into_iter();
         let package = i_iter
             .find(|x| x.name == "Package")
-            .take()
             .context("hould have Package field")?
             .value;
         let version = i_iter
             .find(|x| x.name == "Version")
-            .take()
             .context("Should have Version field")?
             .value;
         let desc = i_iter
             .find(|x| x.name == "Description")
-            .take()
             .context("Should have Version field")?
             .value;
 
