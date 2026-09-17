@@ -85,7 +85,7 @@ pub fn hunter() -> Result<Vec<Package>> {
     let installed_from_mirror = get_apt_mirror_packages()?;
 
     for i in local_packages {
-        if installed_from_mirror.get(&i.package).is_none() {
+        if !installed_from_mirror.contains_key(&i.package) {
             result.push(i);
         }
     }
